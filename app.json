@@ -1,0 +1,21 @@
+{
+  "expo": {
+    "name": "Seguimiento de Hábitos",
+    "slug": "seguimiento-habitos-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "permissions": [
+        "RECEIVE_BOOT_COMPLETED",
+        "POST_NOTIFICATIONS"
+      ]
+    },
+    "plugins": [
+      "expo-notifications"
+    ]
+  }
+}
