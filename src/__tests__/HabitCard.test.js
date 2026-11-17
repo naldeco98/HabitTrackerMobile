@@ -12,6 +12,7 @@ describe('Test de Componente Reutilizable: HabitCard', () => {
     location: { address: 'Gimnasio Central' },
     contact: { name: 'Lucas Entrenador', phone: '1122334455' },
     calendarEventScheduled: true,
+    reminderSeconds: 15,
   };
 
   test('debe renderizar el título del hábito, frecuencia y datos asociados', () => {
@@ -24,6 +25,7 @@ describe('Test de Componente Reutilizable: HabitCard', () => {
     expect(getByText('Gimnasio Central')).toBeTruthy();
     expect(getByText('Lucas Entrenador (1122334455)')).toBeTruthy();
     expect(getByText('Calendario')).toBeTruthy();
+    expect(getByText('Alerta 15s')).toBeTruthy();
   });
 
   test('debe llamar a onToggle cuando se presiona el checkbox', () => {

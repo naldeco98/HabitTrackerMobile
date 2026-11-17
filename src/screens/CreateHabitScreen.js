@@ -32,6 +32,7 @@ export const CreateHabitScreen = ({ navigation }) => {
   const [contact, setContact] = useState(null);
   const [syncCalendar, setSyncCalendar] = useState(false);
   const [enableNotification, setEnableNotification] = useState(true);
+  const [reminderSeconds, setReminderSeconds] = useState(10);
   const [loading, setLoading] = useState(false);
 
   const addHabit = useHabitStore((state) => state.addHabit);
@@ -62,6 +63,20 @@ export const CreateHabitScreen = ({ navigation }) => {
     }
   };
 
+  const handleTestNotification = async () => {
+    const habitNameToNotify = title.trim() ? title : 'Hábito de prueba';
+    const secondsToSchedule = reminderSeconds > 0 ? reminderSeconds : 5;
+    const notifId = await scheduleHabitNotification(habitNameToNotify, secondsToSchedule);
+    if (notifId) {
+      Alert.alert(
+        'Recordatorio programado',
+        `Se configuró la notificación para dispararse en ${secondsToSchedule} segundos.`
+      );
+    } else {
+      Alert.alert('Permiso denegado', 'Por favor habilite los permisos de notificación.');
+    }
+  };
+
   const handleSave = async () => {
     const validation = validateHabitForm(title, frequency);
     if (!validation.isValid) {
@@ -76,8 +91,9 @@ export const CreateHabitScreen = ({ navigation }) => {
       calendarScheduled = await scheduleCalendarEvent(title, location ? location.address : null);
     }
 
+    const secondsToSchedule = reminderSeconds > 0 ? reminderSeconds : 5;
     if (enableNotification) {
-      await scheduleHabitNotification(title, 5);
+      await scheduleHabitNotification(title, secondsToSchedule);
     }
 
     addHabit({
@@ -87,6 +103,7 @@ export const CreateHabitScreen = ({ navigation }) => {
       location,
       contact,
       calendarEventScheduled: calendarScheduled,
+      reminderSeconds: enableNotification ? secondsToSchedule : null,
     });
 
     setLoading(false);
@@ -249,7 +266,11 @@ export const CreateHabitScreen = ({ navigation }) => {
           <View style={styles.toggleRow}>
             <View style={styles.toggleInfo}>
               <Text style={styles.toggleTitle}>Notificación local</Text>
-              <Text style={styles.toggleDesc}>Disparar alerta recordatoria en 5 segundos</Text>
+              <Text style={styles.toggleDesc}>
+                {enableNotification
+                  ? `Recordatorio en ${reminderSeconds || 5} segundos`
+                  : 'Desactivado'}
+              </Text>
             </View>
             <Switch
               value={enableNotification}
@@ -258,6 +279,59 @@ export const CreateHabitScreen = ({ navigation }) => {
               thumbColor={enableNotification ? '#2563EB' : '#F1F5F9'}
             />
           </View>
+
+          {enableNotification ? (
+            <View style={styles.notificationConfigBox}>
+              <Text style={styles.notificationConfigLabel}>Demora del recordatorio:</Text>
+              <View style={styles.secondsRow}>
+                {[5, 10, 30, 60].map((sec) => (
+                  <TouchableOpacity
+                    key={sec}
+                    style={[
+                      styles.secondOption,
+                      reminderSeconds === sec && styles.secondOptionActive,
+                    ]}
+                    onPress={() => setReminderSeconds(sec)}
+                    activeOpacity={0.8}
+                  >
+                    <Text
+                      style={[
+                        styles.secondOptionText,
+                        reminderSeconds === sec && styles.secondOptionTextActive,
+                      ]}
+                    >
+                      {sec} seg
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <View style={styles.customSecondsRow}>
+                <Text style={styles.customSecondsLabel}>O ingresar segundos manuales:</Text>
+                <TextInput
+                  style={styles.customSecondsInput}
+                  keyboardType="numeric"
+                  value={reminderSeconds ? String(reminderSeconds) : ''}
+                  placeholder="Ej: 20"
+                  placeholderTextColor="#94A3B8"
+                  onChangeText={(val) => {
+                    const parsed = parseInt(val, 10);
+                    setReminderSeconds(isNaN(parsed) ? 0 : parsed);
+                  }}
+                />
+              </View>
+
+              <TouchableOpacity
+                style={styles.testNotificationButton}
+                onPress={handleTestNotification}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.testNotificationText}>
+                  Probar recordatorio ahora ({reminderSeconds || 5}s)
+                </Text>
+              </TouchableOpacity>
+            </View>
+          ) : null}
 
           <CustomButton
             title={loading ? 'Guardando...' : 'Guardar Hábito'}
@@ -449,6 +523,83 @@ const styles = StyleSheet.create({
   },
   saveBtn: {
     marginTop: 22,
+  },
+  notificationConfigBox: {
+    backgroundColor: '#F1F5F9',
+    borderRadius: 6,
+    padding: 12,
+    marginTop: 6,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  notificationConfigLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#334155',
+    marginBottom: 8,
+  },
+  secondsRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 10,
+  },
+  secondOption: {
+    flex: 1,
+    paddingVertical: 7,
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    borderRadius: 5,
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+  },
+  secondOptionActive: {
+    borderColor: '#2563EB',
+    backgroundColor: '#EFF6FF',
+  },
+  secondOptionText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#475569',
+  },
+  secondOptionTextActive: {
+    color: '#2563EB',
+    fontWeight: '600',
+  },
+  customSecondsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  customSecondsLabel: {
+    fontSize: 12,
+    color: '#475569',
+  },
+  customSecondsInput: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    borderRadius: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    fontSize: 13,
+    color: '#1E293B',
+    width: 65,
+    textAlign: 'center',
+  },
+  testNotificationButton: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    paddingVertical: 8,
+    borderRadius: 5,
+    alignItems: 'center',
+  },
+  testNotificationText: {
+    fontSize: 12,
+    color: '#2563EB',
+    fontWeight: '600',
   },
 });
 

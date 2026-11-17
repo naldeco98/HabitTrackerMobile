@@ -71,9 +71,23 @@ export const getCurrentDeviceLocation = async () => {
       return null;
     }
 
-    const position = await Location.getCurrentPositionAsync({
-      accuracy: Location.Accuracy.Balanced,
-    });
+    let position = null;
+    try {
+      position = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Lowest,
+      });
+    } catch (posError) {
+      position = await Location.getLastKnownPositionAsync();
+    }
+
+    if (!position) {
+      position = {
+        coords: {
+          latitude: -34.6037,
+          longitude: -58.3816,
+        },
+      };
+    }
 
     const { latitude, longitude } = position.coords;
     let address = `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;

@@ -67,6 +67,11 @@ export const HabitCard = ({
                 <Text style={styles.calendarBadgeText}>Calendario</Text>
               </View>
             ) : null}
+            {habit.reminderSeconds ? (
+              <View style={[styles.badge, styles.reminderBadge]}>
+                <Text style={styles.reminderBadgeText}>Alerta {habit.reminderSeconds}s</Text>
+              </View>
+            ) : null}
             {habit.createdAt ? (
               <Text style={styles.dateText}>Agregado: {habit.createdAt}</Text>
             ) : null}
@@ -202,6 +207,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#F3E8FF',
     borderColor: '#D8B4FE',
   },
+  reminderBadge: {
+    backgroundColor: '#FEF9C3',
+    borderColor: '#FDE047',
+  },
   badgeText: {
     fontSize: 11,
     fontWeight: '500',
@@ -211,6 +220,11 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '500',
     color: '#7E22CE',
+  },
+  reminderBadgeText: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: '#854D0E',
   },
   dateText: {
     fontSize: 11,

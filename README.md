@@ -47,7 +47,7 @@
 - Suscripción y renderizado optimizado mediante hooks y selectores.
 
 ### G. Notificaciones Locales (`expo-notifications`)
-- Mantenimiento y compatibilidad con las notificaciones locales del Parcial 1 para alertas programadas a los 5 segundos de registrar un hábito.
+- Configuración personalizada del tiempo de espera del recordatorio (opciones de 5s, 10s, 30s, 60s o ingreso manual de segundos) con botón para probar la alerta en tiempo real.
 
 ---
 

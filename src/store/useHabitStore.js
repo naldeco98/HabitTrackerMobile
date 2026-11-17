@@ -17,6 +17,7 @@ export const useHabitStore = create(
           location: habitData.location || null,
           contact: habitData.contact || null,
           calendarEventScheduled: habitData.calendarEventScheduled || false,
+          reminderSeconds: habitData.reminderSeconds || null,
         };
         set((state) => ({
           habits: [newHabit, ...state.habits],
