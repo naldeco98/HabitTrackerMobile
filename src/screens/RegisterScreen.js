@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -10,7 +10,7 @@ import {
   ScrollView,
   TouchableOpacity,
 } from 'react-native';
-import { AuthContext } from '../context/AuthContext';
+import { useAuthStore } from '../store/useAuthStore';
 import CustomButton from '../components/CustomButton';
 import { validateRegisterForm } from '../utils/validators';
 
@@ -20,7 +20,7 @@ export const RegisterScreen = ({ navigation }) => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const { register } = useContext(AuthContext);
+  const register = useAuthStore((state) => state.register);
 
   const handleRegister = async () => {
     const validation = validateRegisterForm(username, password, confirmPassword);
@@ -30,7 +30,7 @@ export const RegisterScreen = ({ navigation }) => {
     }
 
     setLoading(true);
-    const result = await register(username, password);
+    const result = register(username, password);
     setLoading(false);
 
     if (result.success) {

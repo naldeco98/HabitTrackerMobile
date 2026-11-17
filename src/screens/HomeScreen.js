@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -9,39 +9,22 @@ import {
   SafeAreaView,
   StatusBar,
 } from 'react-native';
-import { AuthContext } from '../context/AuthContext';
-import { getHabits, toggleHabitStatus, deleteHabit } from '../services/storageService';
+import { useHabitStore } from '../store/useHabitStore';
+import { useAuthStore } from '../store/useAuthStore';
 import { calculateHabitProgress, filterHabitsByFrequency } from '../utils/validators';
 import HabitCard from '../components/HabitCard';
 import CustomButton from '../components/CustomButton';
 
 export const HomeScreen = ({ navigation }) => {
-  const { user, logout } = useContext(AuthContext);
-  const [habits, setHabits] = useState([]);
+  const user = useAuthStore((state) => state.user);
+  const logout = useAuthStore((state) => state.logout);
+
+  const habits = useHabitStore((state) => state.habits);
+  const toggleHabit = useHabitStore((state) => state.toggleHabit);
+  const deleteHabit = useHabitStore((state) => state.deleteHabit);
+  const attachEvidenceImage = useHabitStore((state) => state.attachEvidenceImage);
+
   const [activeFilter, setActiveFilter] = useState('todos');
-  const [refreshing, setRefreshing] = useState(false);
-
-  const loadHabits = useCallback(async () => {
-    const data = await getHabits();
-    setHabits(data);
-  }, []);
-
-  useEffect(() => {
-    const unsubscribe = navigation.addListener('focus', () => {
-      loadHabits();
-    });
-    loadHabits();
-    return unsubscribe;
-  }, [navigation, loadHabits]);
-
-  const handleToggle = async (id) => {
-    const res = await toggleHabitStatus(id);
-    if (res.success) {
-      setHabits(res.habits);
-    } else {
-      Alert.alert('Error', res.error);
-    }
-  };
 
   const handleDelete = (id) => {
     Alert.alert(
@@ -52,14 +35,7 @@ export const HomeScreen = ({ navigation }) => {
         {
           text: 'Eliminar',
           style: 'destructive',
-          onPress: async () => {
-            const res = await deleteHabit(id);
-            if (res.success) {
-              setHabits(res.habits);
-            } else {
-              Alert.alert('Error', res.error);
-            }
-          },
+          onPress: () => deleteHabit(id),
         },
       ]
     );
@@ -130,15 +106,14 @@ export const HomeScreen = ({ navigation }) => {
         data={filteredHabits}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <HabitCard habit={item} onToggle={handleToggle} onDelete={handleDelete} />
+          <HabitCard
+            habit={item}
+            onToggle={toggleHabit}
+            onDelete={handleDelete}
+            onAttachEvidence={attachEvidenceImage}
+          />
         )}
         contentContainerStyle={styles.listContainer}
-        refreshing={refreshing}
-        onRefresh={async () => {
-          setRefreshing(true);
-          await loadHabits();
-          setRefreshing(false);
-        }}
         ListEmptyComponent={
           <View style={styles.emptyState}>
             <Text style={styles.emptyTitle}>No hay hábitos en esta sección</Text>

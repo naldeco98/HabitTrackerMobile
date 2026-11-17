@@ -10,8 +10,16 @@ import {
   Platform,
   ScrollView,
   Switch,
+  Image,
 } from 'react-native';
-import { saveHabit } from '../services/storageService';
+import { useHabitStore } from '../store/useHabitStore';
+import {
+  takePhotoWithCamera,
+  pickImageFromGallery,
+  getCurrentDeviceLocation,
+  pickDeviceContact,
+  scheduleCalendarEvent,
+} from '../services/deviceService';
 import { scheduleHabitNotification } from '../services/notificationService';
 import { validateHabitForm } from '../utils/validators';
 import CustomButton from '../components/CustomButton';
@@ -19,8 +27,40 @@ import CustomButton from '../components/CustomButton';
 export const CreateHabitScreen = ({ navigation }) => {
   const [title, setTitle] = useState('');
   const [frequency, setFrequency] = useState('diario');
+  const [imageUri, setImageUri] = useState(null);
+  const [location, setLocation] = useState(null);
+  const [contact, setContact] = useState(null);
+  const [syncCalendar, setSyncCalendar] = useState(false);
   const [enableNotification, setEnableNotification] = useState(true);
   const [loading, setLoading] = useState(false);
+
+  const addHabit = useHabitStore((state) => state.addHabit);
+
+  const handleTakePhoto = async () => {
+    const uri = await takePhotoWithCamera();
+    if (uri) setImageUri(uri);
+  };
+
+  const handlePickGallery = async () => {
+    const uri = await pickImageFromGallery();
+    if (uri) setImageUri(uri);
+  };
+
+  const handleGetLocation = async () => {
+    const loc = await getCurrentDeviceLocation();
+    if (loc) {
+      setLocation(loc);
+      Alert.alert('Ubicación obtenida', `Lugar registrado: ${loc.address}`);
+    }
+  };
+
+  const handlePickContact = async () => {
+    const selected = await pickDeviceContact();
+    if (selected) {
+      setContact(selected);
+      Alert.alert('Contacto seleccionado', `${selected.name} fue asignado como compañero.`);
+    }
+  };
 
   const handleSave = async () => {
     const validation = validateHabitForm(title, frequency);
@@ -31,41 +71,31 @@ export const CreateHabitScreen = ({ navigation }) => {
 
     setLoading(true);
 
-    const res = await saveHabit({ title, frequency });
-
-    if (!res.success) {
-      setLoading(false);
-      Alert.alert('Error', res.error);
-      return;
+    let calendarScheduled = false;
+    if (syncCalendar) {
+      calendarScheduled = await scheduleCalendarEvent(title, location ? location.address : null);
     }
 
     if (enableNotification) {
       await scheduleHabitNotification(title, 5);
-      Alert.alert(
-        'Hábito guardado',
-        `Se agregó "${title}" y se programó una notificación en 5 segundos.`,
-        [{ text: 'Aceptar', onPress: () => navigation.goBack() }]
-      );
-    } else {
-      Alert.alert('Hábito guardado', `Se agregó "${title}" correctamente.`, [
-        { text: 'Aceptar', onPress: () => navigation.goBack() },
-      ]);
     }
+
+    addHabit({
+      title,
+      frequency,
+      imageUri,
+      location,
+      contact,
+      calendarEventScheduled: calendarScheduled,
+    });
 
     setLoading(false);
-  };
 
-  const handleTestNotificationOnly = async () => {
-    const habitNameToNotify = title.trim() ? title : 'Hábito de prueba';
-    const notifId = await scheduleHabitNotification(habitNameToNotify, 5);
-    if (notifId) {
-      Alert.alert(
-        'Notificación programada',
-        `Se disparará una notificación en 5 segundos para "${habitNameToNotify}".`
-      );
-    } else {
-      Alert.alert('Permiso denegado', 'Por favor habilite los permisos de notificación.');
-    }
+    Alert.alert(
+      'Hábito guardado',
+      `Se registró "${title}" correctamente en tu lista de rutinas.`,
+      [{ text: 'Aceptar', onPress: () => navigation.goBack() }]
+    );
   };
 
   return (
@@ -77,13 +107,13 @@ export const CreateHabitScreen = ({ navigation }) => {
         <View style={styles.card}>
           <Text style={styles.headerTitle}>Alta de Hábito</Text>
           <Text style={styles.headerSubtitle}>
-            Complete los siguientes campos para registrar un nuevo hábito.
+            Complete los campos y configure los recursos del dispositivo.
           </Text>
 
           <Text style={styles.label}>Nombre del hábito</Text>
           <TextInput
             style={styles.input}
-            placeholder="Ej: Leer 15 minutos"
+            placeholder="Ej: Entrenar fuerza"
             placeholderTextColor="#94A3B8"
             value={title}
             onChangeText={setTitle}
@@ -128,29 +158,105 @@ export const CreateHabitScreen = ({ navigation }) => {
             </TouchableOpacity>
           </View>
 
-          <View style={styles.notificationBox}>
-            <View style={styles.notificationHeader}>
-              <View style={styles.notificationInfo}>
-                <Text style={styles.notificationTitle}>Recordatorio local</Text>
-                <Text style={styles.notificationDesc}>
-                  Programar alerta a los 5 segundos
-                </Text>
-              </View>
-              <Switch
-                value={enableNotification}
-                onValueChange={setEnableNotification}
-                trackColor={{ false: '#CBD5E1', true: '#93C5FD' }}
-                thumbColor={enableNotification ? '#2563EB' : '#F1F5F9'}
-              />
-            </View>
+          <View style={styles.sectionDivider} />
+          <Text style={styles.sectionTitle}>Recursos del dispositivo</Text>
 
+          <Text style={styles.label}>Foto de evidencia</Text>
+          <View style={styles.resourceRow}>
             <TouchableOpacity
-              style={styles.testNotifBtn}
-              onPress={handleTestNotificationOnly}
+              style={styles.secondaryButton}
+              onPress={handleTakePhoto}
               activeOpacity={0.7}
             >
-              <Text style={styles.testNotifText}>Probar notificación de prueba (5s)</Text>
+              <Text style={styles.secondaryButtonText}>Tomar foto</Text>
             </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.secondaryButton}
+              onPress={handlePickGallery}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.secondaryButtonText}>Elegir de galería</Text>
+            </TouchableOpacity>
+          </View>
+
+          {imageUri ? (
+            <View style={styles.previewContainer}>
+              <Image source={{ uri: imageUri }} style={styles.imagePreview} />
+              <TouchableOpacity
+                style={styles.removeButton}
+                onPress={() => setImageUri(null)}
+              >
+                <Text style={styles.removeButtonText}>Quitar foto</Text>
+              </TouchableOpacity>
+            </View>
+          ) : null}
+
+          <Text style={styles.label}>Ubicación del hábito</Text>
+          <View style={styles.resourceRow}>
+            <TouchableOpacity
+              style={styles.secondaryButton}
+              onPress={handleGetLocation}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.secondaryButtonText}>Obtener ubicación actual</Text>
+            </TouchableOpacity>
+          </View>
+          {location ? (
+            <View style={styles.dataPreviewBox}>
+              <Text style={styles.dataPreviewText} numberOfLines={2}>
+                Lugar: {location.address}
+              </Text>
+              <TouchableOpacity onPress={() => setLocation(null)}>
+                <Text style={styles.removeDataText}>Quitar</Text>
+              </TouchableOpacity>
+            </View>
+          ) : null}
+
+          <Text style={styles.label}>Contacto relacionado (Compañero/Entrenador)</Text>
+          <View style={styles.resourceRow}>
+            <TouchableOpacity
+              style={styles.secondaryButton}
+              onPress={handlePickContact}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.secondaryButtonText}>Seleccionar de agenda</Text>
+            </TouchableOpacity>
+          </View>
+          {contact ? (
+            <View style={styles.dataPreviewBox}>
+              <Text style={styles.dataPreviewText}>
+                Contacto: {contact.name} {contact.phone ? `(${contact.phone})` : ''}
+              </Text>
+              <TouchableOpacity onPress={() => setContact(null)}>
+                <Text style={styles.removeDataText}>Quitar</Text>
+              </TouchableOpacity>
+            </View>
+          ) : null}
+
+          <View style={styles.toggleRow}>
+            <View style={styles.toggleInfo}>
+              <Text style={styles.toggleTitle}>Agendar en Calendario</Text>
+              <Text style={styles.toggleDesc}>Crea un evento en la agenda del dispositivo</Text>
+            </View>
+            <Switch
+              value={syncCalendar}
+              onValueChange={setSyncCalendar}
+              trackColor={{ false: '#CBD5E1', true: '#93C5FD' }}
+              thumbColor={syncCalendar ? '#2563EB' : '#F1F5F9'}
+            />
+          </View>
+
+          <View style={styles.toggleRow}>
+            <View style={styles.toggleInfo}>
+              <Text style={styles.toggleTitle}>Notificación local</Text>
+              <Text style={styles.toggleDesc}>Disparar alerta recordatoria en 5 segundos</Text>
+            </View>
+            <Switch
+              value={enableNotification}
+              onValueChange={setEnableNotification}
+              trackColor={{ false: '#CBD5E1', true: '#93C5FD' }}
+              thumbColor={enableNotification ? '#2563EB' : '#F1F5F9'}
+            />
           </View>
 
           <CustomButton
@@ -179,6 +285,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 16,
+    paddingBottom: 40,
   },
   card: {
     backgroundColor: '#FFFFFF',
@@ -196,7 +303,7 @@ const styles = StyleSheet.create({
   headerSubtitle: {
     fontSize: 13,
     color: '#64748B',
-    marginBottom: 18,
+    marginBottom: 16,
   },
   label: {
     fontSize: 14,
@@ -242,47 +349,106 @@ const styles = StyleSheet.create({
     color: '#2563EB',
     fontWeight: '600',
   },
-  notificationBox: {
-    marginTop: 20,
-    padding: 14,
-    borderRadius: 6,
-    backgroundColor: '#F8FAFC',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
+  sectionDivider: {
+    height: 1,
+    backgroundColor: '#E2E8F0',
+    marginVertical: 18,
   },
-  notificationHeader: {
+  sectionTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#1E293B',
+    marginBottom: 8,
+  },
+  resourceRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 2,
+    marginBottom: 6,
+  },
+  secondaryButton: {
+    flex: 1,
+    paddingVertical: 9,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    backgroundColor: '#F8FAFC',
+    alignItems: 'center',
+  },
+  secondaryButtonText: {
+    fontSize: 13,
+    color: '#334155',
+    fontWeight: '500',
+  },
+  previewContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 6,
+    marginBottom: 8,
+  },
+  imagePreview: {
+    width: 90,
+    height: 70,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+  },
+  removeButton: {
+    marginLeft: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 4,
+    backgroundColor: '#FEE2E2',
+  },
+  removeButtonText: {
+    fontSize: 12,
+    color: '#DC2626',
+    fontWeight: '500',
+  },
+  dataPreviewBox: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    padding: 10,
+    borderRadius: 6,
+    backgroundColor: '#F1F5F9',
+    marginVertical: 4,
   },
-  notificationInfo: {
+  dataPreviewText: {
+    fontSize: 12,
+    color: '#1E293B',
+    flex: 1,
+    marginRight: 8,
+  },
+  removeDataText: {
+    fontSize: 12,
+    color: '#DC2626',
+    fontWeight: '500',
+  },
+  toggleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 14,
+    paddingVertical: 6,
+  },
+  toggleInfo: {
     flex: 1,
     paddingRight: 10,
   },
-  notificationTitle: {
+  toggleTitle: {
     fontSize: 14,
     fontWeight: '600',
     color: '#1E293B',
   },
-  notificationDesc: {
+  toggleDesc: {
     fontSize: 12,
     color: '#64748B',
     marginTop: 2,
   },
-  testNotifBtn: {
-    marginTop: 10,
-    backgroundColor: '#E2E8F0',
-    paddingVertical: 8,
-    borderRadius: 6,
-    alignItems: 'center',
-  },
-  testNotifText: {
-    color: '#334155',
-    fontSize: 13,
-    fontWeight: '500',
-  },
   saveBtn: {
-    marginTop: 20,
+    marginTop: 22,
   },
 });
 

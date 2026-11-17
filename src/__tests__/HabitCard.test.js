@@ -8,16 +8,22 @@ describe('Test de Componente Reutilizable: HabitCard', () => {
     title: 'Hacer ejercicio',
     frequency: 'diario',
     completed: false,
-    createdAt: '30/09/2026',
+    createdAt: '17/11/2026',
+    location: { address: 'Gimnasio Central' },
+    contact: { name: 'Lucas Entrenador', phone: '1122334455' },
+    calendarEventScheduled: true,
   };
 
-  test('debe renderizar el título del hábito y su frecuencia', () => {
+  test('debe renderizar el título del hábito, frecuencia y datos asociados', () => {
     const { getByText } = render(
       <HabitCard habit={mockHabit} onToggle={jest.fn()} onDelete={jest.fn()} />
     );
 
     expect(getByText('Hacer ejercicio')).toBeTruthy();
     expect(getByText('Diario')).toBeTruthy();
+    expect(getByText('Gimnasio Central')).toBeTruthy();
+    expect(getByText('Lucas Entrenador (1122334455)')).toBeTruthy();
+    expect(getByText('Calendario')).toBeTruthy();
   });
 
   test('debe llamar a onToggle cuando se presiona el checkbox', () => {

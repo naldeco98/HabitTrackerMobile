@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -10,7 +10,7 @@ import {
   ScrollView,
   TouchableOpacity,
 } from 'react-native';
-import { AuthContext } from '../context/AuthContext';
+import { useAuthStore } from '../store/useAuthStore';
 import CustomButton from '../components/CustomButton';
 import { validateLoginForm } from '../utils/validators';
 
@@ -19,7 +19,7 @@ export const LoginScreen = ({ navigation }) => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const { login } = useContext(AuthContext);
+  const login = useAuthStore((state) => state.login);
 
   const handleLogin = async () => {
     const validation = validateLoginForm(username, password);
@@ -29,7 +29,7 @@ export const LoginScreen = ({ navigation }) => {
     }
 
     setLoading(true);
-    const result = await login(username, password);
+    const result = login(username, password);
     setLoading(false);
 
     if (!result.success) {

@@ -6,16 +6,57 @@
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "Permite tomar fotos de evidencia para tus hábitos.",
+        "NSPhotoLibraryUsageDescription": "Permite seleccionar fotos de evidencia desde tu galería.",
+        "NSLocationWhenInUseUsageDescription": "Permite registrar la ubicación donde realizás el hábito.",
+        "NSContactsUsageDescription": "Permite seleccionar un contacto como compañero o entrenador del hábito.",
+        "NSCalendarsUsageDescription": "Permite agendar recordatorios del hábito en tu calendario."
+      }
     },
     "android": {
       "permissions": [
         "RECEIVE_BOOT_COMPLETED",
-        "POST_NOTIFICATIONS"
+        "POST_NOTIFICATIONS",
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "READ_MEDIA_IMAGES",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "READ_CONTACTS",
+        "READ_CALENDAR",
+        "WRITE_CALENDAR"
       ]
     },
     "plugins": [
-      "expo-notifications"
+      "expo-notifications",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Permite seleccionar fotos de evidencia desde tu galería.",
+          "cameraPermission": "Permite tomar fotos de evidencia para tus hábitos."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Permite registrar la ubicación donde realizás el hábito."
+        }
+      ],
+      [
+        "expo-contacts",
+        {
+          "contactsPermission": "Permite seleccionar un contacto como compañero o entrenador del hábito."
+        }
+      ],
+      [
+        "expo-calendar",
+        {
+          "calendarPermission": "Permite agendar recordatorios del hábito en tu calendario."
+        }
+      ]
     ]
   }
 }
