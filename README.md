@@ -106,6 +106,8 @@ Se implementaron y actualizaron las suites de tests con **Jest** y **React Nativ
 ---
 
 ## 6. Video DEMO (YouTube)
+Enlace al video de demostración mostrando las nuevas funcionalidades:  
+[Enlace al video de demostración 2](https://youtube.com/shorts/fvrft92qFyc)
+Enlace al video de demostración 1:
+[Enlace al video de demostración 1](https://youtube.com/shorts/-dItrxmMr1Y?feature=share)
 
-Enlace al video de demostración (máximo 1 minuto) mostrando las nuevas funcionalidades:  
-`[PEGAR AQUÍ EL ENLACE DE YOUTUBE]`
